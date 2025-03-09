@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# Hardcoded email address
+EMAIL="adish96@live.com"
+SSH_KEY_PATH="$HOME/.ssh/id_rsa"
+
+# Generate SSH key if it doesn't already exist
+if [[ ! -f "$SSH_KEY_PATH" ]]; then
+    echo "Generating SSH key..."
+    ssh-keygen -t rsa -b 4096 -C "$EMAIL" -f "$SSH_KEY_PATH" -N ""
+    echo "SSH key generated."
+else
+    echo "SSH key already exists at $SSH_KEY_PATH."
+fi
+
+# Start the SSH agent if it's not already running
+echo "Starting SSH agent..."
+eval "$(ssh-agent -s)"
+
+# Add the SSH key to the agent
+echo "Adding SSH key to the SSH agent..."
+ssh-add "$SSH_KEY_PATH"
+
+# Display public key and guide user to add it to GitHub
+echo "Your public SSH key is:"
+cat "$HOME/.ssh/id_rsa.pub"
+echo ""
+echo "Copy this key and add it to GitHub:"
+echo "1. Go to GitHub > Settings > SSH and GPG keys."
+echo "2. Click 'New SSH key' and paste the key there."
+echo "3. Give it a title and save."
+echo ""
+echo "Once added, you can test your connection using:"
+echo "ssh -T git@github.com"
+
