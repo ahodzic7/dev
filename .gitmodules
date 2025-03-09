@@ -1,0 +1,6 @@
+[submodule "env/.config/nvim"]
+	path = env/.config/nvim
+	url = git@github.com:ahodzic7/nvim.git
+[submodule "tmux-sessionizer"]
+	path = tmux-sessionizer
+	url = git@github.com:ahodzic7/tmux-sessionizer.git
