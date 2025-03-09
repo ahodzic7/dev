@@ -12,5 +12,6 @@ fi
 git clone https://github.com/ahodzic7/dev $HOME/personal/dev
 
 pushd $HOME/personal/dev
+export DEV_ENV="$(pwd)"
 ./run
 popd
