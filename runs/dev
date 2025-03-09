@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+git config --global user.email "adish96@live.com"
+git config --global user.name "ahodzic7"
