@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 # Hardcoded email address
-EMAIL="adish96@live.com"
+DEFAULT_EMAIL="adish96@live.com"
+# Allow passing email as a parameter
+EMAIL="${1:-$DEFAULT_EMAIL}"
+
 SSH_KEY_PATH="$HOME/.ssh/id_rsa"
 
 # Generate SSH key if it doesn't already exist
@@ -11,6 +14,15 @@ if [[ ! -f "$SSH_KEY_PATH" ]]; then
     echo "SSH key generated."
 else
     echo "SSH key already exists at $SSH_KEY_PATH."
+    echo ""
+    echo "1) Remove the existing SSH key:"
+    echo "   rm -f \"$SSH_KEY_PATH\" \"$SSH_KEY_PATH.pub\""
+    echo ""
+    echo "2) Rename the existing SSH key (instead of deleting it):"
+    echo ""
+    echo "   mv \"$SSH_KEY_PATH\" \"$SSH_KEY_PATH.old_\$TIMESTAMP\""
+    echo "   mv \"$SSH_KEY_PATH.pub\" \"$SSH_KEY_PATH.pub.old_\$TIMESTAMP\""
+    echo ""
 fi
 
 # Start the SSH agent if it's not already running
