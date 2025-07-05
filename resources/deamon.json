@@ -1,0 +1,13 @@
+{
+    "dns": [
+        "10.10.0.53",
+        "8.8.8.8",
+        "8.8.4.4"
+    ],
+    "experimental": false,
+    "hosts": [
+        "npipe://",
+        "tcp://0.0.0.0:2375",
+        "npipe:////./pipe/docker_engine_windows"
+    ]
+}
