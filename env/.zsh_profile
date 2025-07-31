@@ -1,5 +1,7 @@
 export XDG_CONFIG_HOME=$HOME/.config
 VIM="nvim"
+## If I am in WSL, need to use windows git:
+alias wgit="/mnt/c/Program\ Files/Git/cmd/git.exe"
 
 PERSONAL=$XDG_CONFIG_HOME/personal
 DEV_ENV=$HOME/dev
