@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 /mnt/c/path/to/compile_commands.json"
+  exit 1
+fi
+
+# Input and output paths
+INPUT="$1"
+DIR=$(dirname "$INPUT")
+OUTPUT="$DIR/compile_commands_wsl.json"
+
+# Validate input file exists
+if [ ! -f "$INPUT" ]; then
+  echo "Error: File not found: $INPUT"
+  exit 1
+fi
+
+# Process with jq
+jq 'map(
+    . + {
+        file: (.file | gsub("([A-Z]):"; "/mnt/\(.[:1] | ascii_downcase)")),
+        directory: (.directory | gsub("([A-Z]):"; "/mnt/\(.[:1] | ascii_downcase)")),
+        command: (.command | gsub("([A-Z]):"; "/mnt/\(.[:1] | ascii_downcase)"))
+    }
+)' "$INPUT" > "$OUTPUT"
+
+echo "WSL-friendly compile_commands.json written to: $OUTPUT"
+
