@@ -1,4 +1,5 @@
 export XDG_CONFIG_HOME=$HOME/.config
+export N_PREFIX="$HOME/.local/n"
 VIM="nvim"
 ## If I am in WSL, need to use windows git:
 alias wgit="/mnt/c/Program\ Files/Git/cmd/git.exe"
@@ -47,3 +48,4 @@ addToPathFront $HOME/.local/apps
 addToPathFront $HOME/.local/scripts
 addToPathFront $HOME/.local/bin
 addToPathFront $HOME/.local/apps/
+addToPathFront $N_PREFIX/bin:$PATH

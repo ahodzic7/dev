@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+sudo apt install nodejs npm
+npm config set prefix ~/.local/npm
+export PATH="$HOME/.local/npm/bin:$PATH"
+npm i -g n
+
+export N_PREFIX="$HOME/.local/n"
+export PATH="$N_PREFIX/bin:$PATH"
+
+n 22
