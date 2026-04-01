@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+cmd="$1"
+shift
+
+if command -v "${cmd}.exe" >/dev/null 2>&1; then
+    "${cmd}.exe" "$@"
+else
+    echo "❌ Windows command not found: ${cmd}.exe"
+    exit 1
+fi
