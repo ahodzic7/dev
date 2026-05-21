@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# Install rustup (the official Rust toolchain manager). This installs:
+#   - rustc   (the compiler)
+#   - cargo   (the build tool / package manager)
+#   - rustup  (lets you switch toolchains and add components)
+#
+# rust-analyzer itself is NOT installed here -- it is managed by Mason
+# inside Neovim (see lua/plugins/lsp.lua). That keeps the LSP binary
+# pinned alongside the editor config.
+
+if ! command -v rustup >/dev/null 2>&1; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile default
+fi
+
+# Make cargo/rustc available in the current shell without re-sourcing.
+. "$HOME/.cargo/env"
+
+rustup update stable
+rustup component add clippy rustfmt
