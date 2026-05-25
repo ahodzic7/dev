@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+FLAG="$HOME/.cache/claude-sound-disabled"
+SOUND='C:\Windows\Media\notify.wav'
+
+play() {
+    [ -f "$FLAG" ] && exit 0
+    powershell.exe -c "(New-Object Media.SoundPlayer '$SOUND').PlaySync()" >/dev/null 2>&1
+}
+
+case "${1:-}" in
+    "")        play ;;
+    on)        rm -f "$FLAG";  echo "claude-sound: on" ;;
+    off)       mkdir -p "$(dirname "$FLAG")"; touch "$FLAG"; echo "claude-sound: off" ;;
+    toggle)    if [ -f "$FLAG" ]; then rm -f "$FLAG"; echo "claude-sound: on"
+               else mkdir -p "$(dirname "$FLAG")"; touch "$FLAG"; echo "claude-sound: off"; fi ;;
+    status)    [ -f "$FLAG" ] && echo "off" || echo "on" ;;
+    *)         echo "usage: claude-sound [on|off|toggle|status]" >&2; exit 2 ;;
+esac
