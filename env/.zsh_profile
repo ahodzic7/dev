@@ -27,6 +27,11 @@ bindkey -v
 bindkey -M viins -s '^f' 'tmux-sessionizer\n'
 bindkey -M vicmd -s '^f' 'tmux-sessionizer\n'
 
+# claude-finder (in-tmux the C-g root bind in tmux.conf wins; this is the bare-terminal fallback)
+bindkey -s ^g "claude-finder\n"
+bindkey -M viins -s '^g' 'claude-finder\n'
+bindkey -M vicmd -s '^g' 'claude-finder\n'
+
 catr() {
     tail -n "+$1" $3 | head -n "$(($2 - $1 + 1))"
 }

@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# claude-finder — fzf picker for active Claude Code instances in tmux.
+# Lists every pane running `claude`, shows its task name + state, jumps on select.
+# State comes from the pane title glyph (✳ idle / braille spinner = working) plus a
+# capture-pane scan that refines "working" vs "waiting for you" vs "idle/stopped".
+
+set -u
+
+FZF="${FZF:-fzf}"
+
+build_rows() {
+    local cmd id title task glyph first body state icon sort
+    # field 1 = current command, 2 = pane id (sess:win.pane), 3 = pane title
+    while IFS=$'\t' read -r cmd id title; do
+        [[ "$cmd" == "claude" ]] || continue
+
+        # Claude prefixes the title with a status glyph then a space: "<glyph> <task>".
+        # The first space-delimited token is a glyph iff it has no alphanumerics
+        # (covers ✳ idle and the braille spinners ⠂⠄⠆… = working).
+        first="${title%% *}"
+        if [[ -n "$first" && "$first" != *[[:alnum:]]* ]]; then
+            glyph="$first"; task="${title#* }"
+        else
+            glyph=""; task="$title"
+        fi
+        # trim leading/trailing whitespace from the task
+        task="${task#"${task%%[![:space:]]*}"}"
+        task="${task%"${task##*[![:space:]]}"}"
+        [[ -z "$task" ]] && task="(no task)"
+
+        body=$(tmux capture-pane -p -t "$id" 2>/dev/null | tail -n 25)
+
+        if printf '%s' "$body" | grep -q 'esc to interrupt'; then
+            state=WORKING
+        elif printf '%s' "$body" | grep -qE 'Do you want to proceed|❯ 1\.|1\. Yes|Yes, and|No, and tell'; then
+            state=WAITING
+        elif [[ -n "$glyph" && "$glyph" != "✳" ]]; then
+            state=WORKING          # non-idle glyph (braille spinner) => running
+        else
+            state=IDLE             # ✳ or no glyph, nothing pending => stopped/done
+        fi
+
+        case "$state" in
+            WAITING) icon=$'\033[31m◆\033[0m'; sort=0 ;;   # red — needs you
+            WORKING) icon=$'\033[33m●\033[0m'; sort=1 ;;   # yellow — running
+            IDLE)    icon=$'\033[32m○\033[0m'; sort=2 ;;   # green — stopped/done
+        esac
+
+        # numeric sort key (field 1) <tab> pane id (field 2) <tab> display (field 3)
+        printf '%d\t%s\t%s %-7s %s   \033[90m(%s)\033[0m\n' \
+            "$sort" "$id" "$icon" "$state" "$task" "$id"
+    done < <(tmux list-panes -a -F '#{pane_current_command}'$'\t''#{session_name}:#{window_index}.#{pane_index}'$'\t''#{pane_title}' 2>/dev/null)
+}
+
+# WAITING first, then WORKING, then IDLE; drop the numeric sort key afterward.
+rows=$(build_rows | sort -t$'\t' -k1,1n | cut -f2-)
+
+if [[ -z "$rows" ]]; then
+    echo "No active Claude instances found."
+    sleep 1.2
+    exit 0
+fi
+
+selected=$(printf '%s\n' "$rows" | "$FZF" \
+    --ansi \
+    --delimiter='\t' \
+    --with-nth=2.. \
+    --header='Claude instances — enter to jump, esc to cancel' \
+    --preview 'tmux capture-pane -p -t {1} | tail -n 40' \
+    --preview-window=down,60%)
+
+[[ -z "$selected" ]] && exit 0
+
+id=$(printf '%s' "$selected" | cut -f1)
+[[ -z "$id" ]] && exit 0
+
+sess=${id%%:*}        # session
+win=${id%.*}          # session:window
+tmux switch-client -t "$sess"   2>/dev/null
+tmux select-window  -t "$win"   2>/dev/null
+tmux select-pane    -t "$id"    2>/dev/null
