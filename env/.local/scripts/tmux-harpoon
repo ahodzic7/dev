@@ -1,0 +1,186 @@
+#!/usr/bin/env bash
+# harpoon-like session list for tmux
+# slots u/i/o, jump with prefix+u/i/o, explorer with prefix+e, add with prefix+a/A
+# pins session + window + pane: jump returns to exact spot
+
+state_dir=$HOME/.local/state/tmux-harpoon
+list_file=$state_dir/list
+max_slots=3
+
+mkdir -p $state_dir
+touch $list_file
+
+has_session() {
+    tmux list-sessions | grep -q "^$1:"
+}
+
+# slots named after their jump keys: u i o
+key_to_slot() {
+    case $1 in
+        u|1) echo 1 ;;
+        i|2) echo 2 ;;
+        o|3) echo 3 ;;
+    esac
+}
+
+slot_key() {
+    local keys=(u i o)
+    echo "${keys[$(($1 - 1))]}"
+}
+
+get_slot() {
+    sed -n "$1p" $list_file
+}
+
+set_slot() {
+    local lines=$(wc -l < $list_file)
+    while [[ $lines -lt $1 ]]; do
+        echo "" >> $list_file
+        lines=$((lines + 1))
+    done
+    sed -i "$1c\\$2" $list_file
+}
+
+# same naming as tmux-sessionizer, so recreated sessions match stored names
+sessionizer_name() {
+    local root_dir=$(basename "$(dirname "$1")")
+    local prefix=""
+    if [[ "$root_dir" == "work" ]]; then
+        prefix="w"
+    elif [[ "$root_dir" == "personal" ]]; then
+        prefix="p"
+    fi
+    echo "${prefix}_$(basename "$1" | tr . _)"
+}
+
+current_session() {
+    tmux display-message -p '#{session_name}'
+}
+
+current_path() {
+    tmux display-message -p '#{session_path}'
+}
+
+current_window() {
+    tmux display-message -p '#{window_id}'
+}
+
+current_pane() {
+    tmux display-message -p '#{pane_id}'
+}
+
+window_alive() {
+    tmux list-windows -t "$1" -F '#{window_id}' 2> /dev/null | grep -qx "$2"
+}
+
+pane_alive() {
+    tmux list-panes -t "$1" -F '#{pane_id}' 2> /dev/null | grep -qx "$2"
+}
+
+cmd_add() {
+    local name=${1:-$(current_session)}
+    local dir=${2:-$(current_path)}
+    local win=${3:-$(current_window)}
+    local pane=${4:-$(current_pane)}
+
+    if grep -q "^$name|" $list_file; then
+        tmux display-message "harpoon: $name already in list"
+        exit 0
+    fi
+
+    local slot=1
+    while [[ $slot -le $max_slots ]]; do
+        if [[ -z $(get_slot $slot) ]]; then
+            set_slot $slot "$name|$dir|$win|$pane"
+            tmux display-message "harpoon: $name -> slot $(slot_key $slot)"
+            exit 0
+        fi
+        slot=$((slot + 1))
+    done
+
+    tmux display-message "harpoon: all $max_slots slots full"
+}
+
+cmd_set() {
+    local slot=$(key_to_slot "$1")
+    if [[ -z $slot ]]; then
+        tmux display-message "harpoon: slot must be u/i/o"
+        exit 0
+    fi
+    local name=${2:-$(current_session)}
+    local dir=${3:-$(current_path)}
+    local win=${4:-$(current_window)}
+    local pane=${5:-$(current_pane)}
+    set_slot $slot "$name|$dir|$win|$pane"
+    tmux display-message "harpoon: $name -> slot $(slot_key $slot)"
+}
+
+cmd_clear() {
+    if [[ $1 == "a" ]]; then
+        > $list_file
+        tmux display-message "harpoon: cleared all slots"
+        exit 0
+    fi
+    local slot=$(key_to_slot "$1")
+    if [[ -z $slot ]]; then
+        tmux display-message "harpoon: slot must be u/i/o (a = all)"
+        exit 0
+    fi
+    sed -i "${slot}s/.*//" $list_file
+    tmux display-message "harpoon: slot $(slot_key $slot) cleared"
+}
+
+cmd_jump() {
+    local slot=$(key_to_slot "$1")
+    if [[ -z $slot ]]; then
+        tmux display-message "harpoon: no slot $1"
+        exit 0
+    fi
+    local entry=$(get_slot $slot)
+    if [[ -z $entry ]]; then
+        tmux display-message "harpoon: slot $(slot_key $slot) empty"
+        exit 0
+    fi
+
+    IFS='|' read -r name dir win pane <<< "$entry"
+
+    if has_session "$name"; then
+        # restore exact window/pane if still alive, else just the session
+        if [[ -n $win ]] && window_alive "$name" "$win"; then
+            if [[ -n $pane ]] && pane_alive "$win" "$pane"; then
+                tmux select-window -t "$win"
+                tmux select-pane -t "$pane"
+            else
+                tmux select-window -t "$win"
+            fi
+        fi
+        tmux switch-client -t "$name"
+        exit 0
+    fi
+
+    if [[ -d $dir ]]; then
+        # session died, sessionizer recreates + hydrates + switches
+        set_slot $slot "$(sessionizer_name "$dir")|$dir"
+        tmux-sessionizer "$dir"
+    else
+        tmux display-message "harpoon: $name dead and $dir gone"
+    fi
+}
+
+# harpoon-style explorer: edit list in nvim popup
+# dd deletes entry, reorder lines freely, Enter jumps to line's session, quit saves
+cmd_edit() {
+    nvim "$list_file" \
+        -c "set nonumber norelativenumber laststatus=0 noswapfile" \
+        -c "autocmd VimLeavePre * silent! write" \
+        -c "nnoremap <buffer> <silent> <CR> :write <bar> call system('tmux-harpoon jump ' . line('.')) <bar> quit!<CR>"
+}
+
+case $1 in
+    add) cmd_add "$2" "$3" "$4" "$5" ;;
+    set) cmd_set "$2" "$3" "$4" "$5" "$6" ;;
+    jump) cmd_jump $2 ;;
+    clear) cmd_clear "$2" ;;
+    edit) cmd_edit ;;
+    *) echo "usage: tmux-harpoon add|set <key>|jump <key>|clear <key|a>|edit" >&2; exit 1 ;;
+esac
