@@ -58,3 +58,9 @@ addToPathFront $HOME/.local/scripts
 addToPathFront $HOME/.local/bin
 addToPathFront $HOME/.local/apps/
 addToPathFront $N_PREFIX/bin:$PATH
+
+# WSL appends all Windows %PATH% dirs (~460) to $PATH. Probing them over the 9p
+# /mnt mount is slow — netrw :Ex took 2.6s, and git/fzf/mason executable lookups
+# too. Strip /mnt/* from the shell PATH. Run Windows exes with `win <cmd>`, which
+# re-adds the Windows PATH for that single call only.
+path=("${(@)path:#/mnt/*}")

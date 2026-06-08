@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/win-path"
 
-cmd="$1"
-shift
+if [ "$1" = "--refresh" ]; then rm -f "$cache"; shift; fi
+cmd="$1"; shift
+
+# Shell strips Windows dirs from $PATH (keeps WSL fast). Rebuild + cache the
+# Windows PATH and add it for THIS invocation only, so the .exe resolves.
+if [ ! -s "$cache" ]; then
+    mkdir -p "$(dirname "$cache")"
+    /mnt/c/Windows/System32/cmd.exe /c "echo %PATH%" 2>/dev/null \
+        | tr -d '\r' | tr ';' '\n' \
+        | while IFS= read -r p; do [ -n "$p" ] && wslpath -u "$p" 2>/dev/null; done \
+        | paste -sd: > "$cache"
+fi
+export PATH="$PATH:$(cat "$cache")"
 
 if command -v "${cmd}.exe" >/dev/null 2>&1; then
-    "${cmd}.exe" "$@"
+    exec "${cmd}.exe" "$@"
 else
-    echo "❌ Windows command not found: ${cmd}.exe"
+    echo "❌ Windows command not found: ${cmd}.exe" >&2
     exit 1
 fi
