@@ -2,10 +2,11 @@
 
 FLAG="$HOME/.cache/claude-sound-disabled"
 SOUND='C:\Windows\Media\notify.wav'
+PWSH="/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
 
 play() {
     [ -f "$FLAG" ] && exit 0
-    powershell.exe -c "(New-Object Media.SoundPlayer '$SOUND').PlaySync()" >/dev/null 2>&1
+    "$PWSH" -c "(New-Object Media.SoundPlayer '$SOUND').PlaySync()" >/dev/null 2>&1
 }
 
 case "${1:-}" in
