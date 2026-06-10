@@ -4,6 +4,21 @@ VIM="nvim"
 ## If I am in WSL, need to use windows git:
 alias wgit="/mnt/c/Program\ Files/Git/cmd/git.exe"
 
+# WSL: quick access to the Windows user folder (cached; see scripts/win)
+_win_home_cache="${XDG_CACHE_HOME:-$HOME/.cache}/win-home"
+if [ ! -s "$_win_home_cache" ]; then
+    mkdir -p "$(dirname "$_win_home_cache")"
+    wslpath -u "$(/mnt/c/Windows/System32/cmd.exe /c 'echo %USERPROFILE%' \
+        2>/dev/null | tr -d '\r')" 2>/dev/null > "$_win_home_cache"
+fi
+export WINHOME="$(cat "$_win_home_cache" 2>/dev/null)"
+export WINDESK="$WINHOME/Desktop"
+export WINDL="$WINHOME/Downloads"
+
+desktop()   { cd "$WINDESK" || echo "WINDESK not found: $WINDESK"; }
+downloads() { cd "$WINDL"   || echo "WINDL not found: $WINDL"; }
+winhome()   { cd "$WINHOME" || echo "WINHOME not found: $WINHOME"; }
+
 PERSONAL=$XDG_CONFIG_HOME/personal
 DEV_ENV=$HOME/dev
 for i in `find -L $PERSONAL`; do
