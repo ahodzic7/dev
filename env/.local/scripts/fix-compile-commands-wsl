@@ -17,13 +17,16 @@ if [ ! -f "$INPUT" ]; then
 fi
 
 # Process with jq
-jq 'map(
-    . + {
-        file: (.file | gsub("([A-Z]):"; "/mnt/\(.[:1] | ascii_downcase)")),
-        directory: (.directory | gsub("([A-Z]):"; "/mnt/\(.[:1] | ascii_downcase)")),
-        command: (.command | gsub("([A-Z]):"; "/mnt/\(.[:1] | ascii_downcase)"))
-    }
-)' "$INPUT" > "$OUTPUT"
+jq 'def winpath:
+        gsub("(?<d>[A-Z]):"; "/mnt/\(.d | ascii_downcase)")
+        | gsub("\\\\"; "/");
+    map(
+        . + {
+            file: (.file | winpath),
+            directory: (.directory | winpath),
+            command: (.command | winpath)
+        }
+    )' "$INPUT" > "$OUTPUT"
 
 echo "WSL-friendly compile_commands.json written to: $OUTPUT"
 
