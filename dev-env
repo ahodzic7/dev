@@ -69,3 +69,6 @@ copy_file $DEV_ENV/env/.zshrc $HOME/.zshrc
 copy_file $DEV_ENV/env/.xprofile $HOME/.xprofile
 copy_file $DEV_ENV/env/.tmux-sessionizer $HOME/.tmux-sessionizer
 copy_file $DEV_ENV/dev-env $HOME/.local/scripts/dev-env
+
+mkdir -p $HOME/.claude
+copy_file $DEV_ENV/env/.claude/settings.json $HOME/.claude/settings.json

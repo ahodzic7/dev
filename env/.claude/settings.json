@@ -1,0 +1,27 @@
+{
+  "model": "opus",
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.local/scripts/claude-sound",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.local/scripts/claude-sound",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}
