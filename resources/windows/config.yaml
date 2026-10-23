@@ -229,6 +229,13 @@ keybindings:
   - commands: ['toggle-floating --centered']
     bindings: ['alt+shift+space']
 
+  # Pin the focused window above all others (e.g. a sim window behind a
+  # transparent terminal), and unpin it back to a normal floating window.
+  - commands: ['set-floating --shown-on-top=true']
+    bindings: ['alt+y']
+  - commands: ['set-floating --shown-on-top=false']
+    bindings: ['alt+shift+y']
+
   # Change the focused window to be tiling.
   - commands: ['toggle-tiling']
     bindings: ['alt+t']
