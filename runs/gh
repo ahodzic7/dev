@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# Nothing to install: this box talks to the windows gh.exe through the
+# gh-win shim (env/.local/scripts/gh-win). Just check the pieces the nvim
+# pr review needs and say what is missing.
+
+gh_win="$HOME/.local/scripts/gh-win"
+
+if [ ! -x "$gh_win" ]; then
+    echo "gh: shim missing at $gh_win -- run dev-env first"
+    exit 0
+fi
+
+if ! "$gh_win" --version > /dev/null 2>&1; then
+    echo "gh: gh.exe not reachable from wsl"
+    echo "    on windows: winget install --id GitHub.cli"
+    exit 0
+fi
+
+echo "gh: $("$gh_win" --version | head -n1) (windows, via gh-win)"
+
+if ! "$gh_win" auth status > /dev/null 2>&1; then
+    echo "gh: not authenticated"
+    echo "    on windows: gh auth login"
+    exit 0
+fi
+
+"$gh_win" auth status 2>&1 | sed 's/^/    /'

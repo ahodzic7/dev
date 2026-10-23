@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# gh shim for wsl
+
+# environment and its PATH may not contain ~/.local/scripts.
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+win="$script_dir/win"
+if [ ! -x "$win" ]; then
+    win="$(command -v win)"
+fi
+
+if [ -z "$win" ]; then
+    echo "win helper not found, cannot reach windows gh.exe" >&2
+    exit 1
+fi
+
+exec "$win" gh "$@"
